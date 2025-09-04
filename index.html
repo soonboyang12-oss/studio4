@@ -47,11 +47,24 @@
 <body>
     <div class="container">
         <h1>양순보 studio4</h1>
-        <ul>
-            <li><a href="text1.html">설계 자료 1</a></li>
-            <li><a href="text2.html">설계 자료 2</a></li>
-            <li><a href="text100.html">설계 자료 100</a></li>
-        </ul>
+        <ul id="project-list">
+            </ul>
     </div>
+
+    <script>
+        const projectList = document.getElementById('project-list');
+        const totalProjects = 100;
+
+        for (let i = 1; i <= totalProjects; i++) {
+            const listItem = document.createElement('li');
+            const link = document.createElement('a');
+
+            link.href = `text${i}.html`;
+            link.textContent = `설계 자료 ${i}`;
+
+            listItem.appendChild(link);
+            projectList.appendChild(listItem);
+        }
+    </script>
 </body>
 </html>
