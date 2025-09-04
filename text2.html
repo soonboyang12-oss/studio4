@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동인천역 역세권 변천사와 미래</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Muted Teal Accent -->
+    <!-- Application Structure Plan: The application is designed as a vertical scrolling narrative. A sticky top navigation/timeline allows users to jump between historical eras. This structure is intuitive for a chronological story, enabling users to explore the rise, fall, and future potential of the Dongincheon area sequentially. Clicking a timeline button smoothly scrolls to the relevant section and dynamically updates content including text, key building highlights, and a "vibrancy" chart. This encourages exploration and makes the historical cause-and-effect relationships clear. The final section presents a future proposal, offering a conclusive vision based on the historical context. This is more engaging than a static report. -->
+    <!-- Visualization & Content Choices: 
+        1. Report Info: Historical eras of Dongincheon. Goal: Show change over time. Viz: Interactive Timeline (HTML Buttons). Interaction: Click to update main content area. Justification: Most intuitive way to navigate a historical narrative. Library: Vanilla JS.
+        2. Report Info: Commercial vibrancy. Goal: Visually compare the prosperity of different eras. Viz: Bar Chart. Interaction: Updates dynamically when a new era is selected. Justification: Provides a quick, quantitative-feeling summary of the area's economic health over time. Library: Chart.js (Canvas).
+        3. Report Info: Key buildings and their impact. Goal: Connect specific developments to their consequences. Viz: Styled Info Cards (HTML/CSS). Interaction: Content of cards changes based on selected era. Justification: Breaks down complex information into digestible, visually appealing chunks. Library: HTML/Tailwind CSS.
+        4. Report Info: Future office concept. Goal: Propose a new vision. Viz: Conceptual Diagram. Interaction: Static visual summary. Justification: A diagram is more effective than text alone for explaining a spatial and functional concept. Library: HTML/Tailwind CSS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #FDFBF8;
+            color: #333;
+        }
+        .timeline-btn {
+            transition: all 0.3s ease;
+            position: relative;
+            padding-bottom: 8px;
+        }
+        .timeline-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 3px;
+            background-color: #26A69A;
+            border-radius: 2px;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-stone-50">
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-center h-16">
+                <div id="timeline-nav" class="flex space-x-4 md:space-x-8">
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <section id="hero" class="text-center my-12 md:my-20">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">동인천역: 시간의 궤적, 미래의 교차로</h1>
+            <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">
+                인천의 심장이었던 동인천역의 역사를 되짚어보며, 역세권 활성화를 위한 노력과 그 영향을 탐구합니다. 과거의 영광과 쇠퇴를 넘어, 동인천이 나아갈 미래를 제안합니다.
+            </p>
+        </section>
+
+        <section id="content-display" class="scroll-mt-20">
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+                <div id="era-content" class="fade-in">
+                    <h2 id="era-title" class="text-3xl font-bold text-teal-700 mb-4"></h2>
+                    <p id="era-description" class="text-base md:text-lg text-gray-700 leading-relaxed mb-8"></p>
+                    
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-6 border-l-4 border-teal-500 pl-4">핵심 건물과 역세권 영향</h3>
+                    <div id="era-buildings" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                    </div>
+    
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4 border-l-4 border-teal-500 pl-4">시대별 상권 활력 지수</h3>
+                    <div class="chart-container">
+                        <canvas id="vibrancyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="future-proposal" class="mt-16 md:mt-24 scroll-mt-20">
+             <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+                <h2 class="text-3xl font-bold text-gray-800 text-center mb-4">미래 제안: 동인천을 위한 새로운 오피스</h2>
+                <p class="text-lg text-gray-600 text-center max-w-4xl mx-auto mb-12">
+                    과거의 영광을 재현하기 위한 대규모 개발이 아닌, 지역의 역사와 문화를 존중하며 새로운 활력을 불어넣을 수 있는 '커뮤니티 & 컬처 허브 오피스'를 제안합니다. 이는 단순한 업무 공간을 넘어, 지역과 함께 성장하는 새로운 중심이 될 것입니다.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <div class="bg-teal-50 p-6 rounded-xl">
+                        <div class="text-4xl mb-3">🏢</div>
+                        <h4 class="text-xl font-semibold text-teal-800 mb-2">핵심 컨셉</h4>
+                        <p class="text-gray-600">저층·고디자인의 개방형 복합 공간. 지역의 역사적 경관과 조화를 이루며, 누구나 쉽게 방문하고 즐길 수 있는 공간을 지향합니다.</p>
+                    </div>
+                    <div class="bg-amber-50 p-6 rounded-xl">
+                         <div class="text-4xl mb-3">🎯</div>
+                        <h4 class="text-xl font-semibold text-amber-800 mb-2">주요 타겟</h4>
+                        <p class="text-gray-600">디자인, 미디어, IT 등 창조 산업 분야의 스타트업, 소셜 벤처, 프리랜서. 지역 기반의 젊은 창작자와 기업을 유치합니다.</p>
+                    </div>
+                    <div class="bg-indigo-50 p-6 rounded-xl">
+                        <div class="text-4xl mb-3">✨</div>
+                        <h4 class="text-xl font-semibold text-indigo-800 mb-2">기대 효과</h4>
+                        <p class="text-gray-600">주간에는 창의적인 인재들이 상권을 활성화하고, 야간과 주말에는 문화 행사로 방문객을 유치하여 24시간 활기 넘치는 공간을 조성합니다.</p>
+                    </div>
+                </div>
+
+                <div class="mt-12">
+                    <h4 class="text-2xl font-semibold text-gray-800 mb-6 text-center">공간 구성 시너지 모델</h4>
+                    <div class="max-w-4xl mx-auto bg-stone-100 p-6 rounded-lg">
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1 bg-white p-4 rounded-md shadow-sm">
+                                <h5 class="font-bold text-center text-gray-700">PUBLIC (1-2층)</h5>
+                                <p class="text-sm text-center text-gray-500 mt-1">카페, 갤러리, 이벤트홀, 로컬상점</p>
+                                <div class="text-2xl text-center mt-2">↔️</div>
+                                <p class="text-sm text-center text-blue-600 font-medium">상호작용 및 유입</p>
+                            </div>
+                            <div class="flex-1 bg-white p-4 rounded-md shadow-sm">
+                                <h5 class="font-bold text-center text-gray-700">OFFICE (3층 이상)</h5>
+                                <p class="text-sm text-center text-gray-500 mt-1">코워킹 스페이스, 소규모 오피스</p>
+                                <div class="text-2xl text-center mt-2">↔️</div>
+                                <p class="text-sm text-center text-green-600 font-medium">지역상권 소비 촉진</p>
+                            </div>
+                            <div class="flex-1 bg-white p-4 rounded-md shadow-sm">
+                                <h5 class="font-bold text-center text-gray-700">연결성</h5>
+                                <p class="text-sm text-center text-gray-500 mt-1">동인천역, 지하상가, 주변 명소</p>
+                                <div class="text-2xl text-center mt-2">↔️</div>
+                                <p class="text-sm text-center text-purple-600 font-medium">도시재생 허브 역할</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const historyData = {
+                era1: {
+                    id: 'era1',
+                    name: "개항과 시작 (1899-1945)",
+                    title: "철도의 개통과 식민 도시의 중심",
+                    description: "1899년 경인선 개통과 함께 '축현역'으로 시작된 동인천역은 인천항과 서울을 잇는 관문 역할을 했습니다. 이 시기 역 주변은 일본인 거류지를 중심으로 근대적 상업 시설이 들어서며 상권의 기틀을 마련했습니다. 하지만 이는 식민지 수탈을 위한 기반 시설이었으며, 조선인 상권은 상대적으로 소외되는 결과를 낳았습니다.",
+                    vibrancy: 40,
+                    buildings: [
+                        { name: "인천우체국", impact: "통신과 물류의 중심으로, 역 주변에 행정 및 업무 기능을 집중시켰습니다." },
+                        { name: "각종 은행 및 금융기관", impact: "식민지 경제의 중심지 역할을 하며 자본이 모이는 상권을 형성했습니다." },
+                        { name: "일본계 백화점", impact: "근대적 소비문화를 도입했지만, 주로 일본인을 대상으로 하여 지역 상권에 미치는 긍정적 영향은 제한적이었습니다." }
+                    ]
+                },
+                era2: {
+                    id: 'era2',
+                    name: "황금기 (1950-1970년대)",
+                    title: "인천의 심장, 문화와 소비의 중심지",
+                    description: "한국전쟁 이후 동인천은 명실상부한 인천 최대의 번화가로 자리매김합니다. '애관극장', '인현극장' 등 대형 극장들이 들어서며 문화의 중심지가 되었고, '인천백화점'과 대규모 지하상가는 쇼핑을 위해 모여든 인파로 항상 붐볐습니다. 이 시기 동인천은 모든 약속과 만남이 이루어지는 인천의 심장이었습니다.",
+                    vibrancy: 100,
+                    buildings: [
+                        { name: "애관극장, 인현극장", impact: "시민들의 대표적인 여가 및 문화 공간으로, 주변 식당과 상점가에 엄청난 유동인구를 공급했습니다." },
+                        { name: "인천백화점 (신신백화점)", impact: "최신 유행을 선도하는 쇼핑의 중심지로, 고급 소비층을 유인하며 역세권 상권의 격을 높였습니다." },
+                        { name: "동인천 지하상가", impact: "수많은 점포가 밀집하여 서민들의 쇼핑 명소로 자리 잡았고, 역과 주변 지역을 잇는 보행 네트워크의 중심이 되었습니다." }
+                    ]
+                },
+                era3: {
+                    id: 'era3',
+                    name: "쇠퇴기 (1980-2000년대)",
+                    title: "새로운 도심의 등장과 구도심의 그늘",
+                    description: "1985년 인천시청이 구월동으로 이전하면서 동인천의 쇠퇴가 본격화되었습니다. 구월동과 부평 등 신흥 상권에 대형 백화점과 아파트 단지가 들어서면서 유동인구가 급격히 감소했습니다. 기존의 낡은 건물과 인프라는 새로운 경쟁자들에게 밀려났고, 한때 인천의 중심이었던 동인천은 점차 활기를 잃어갔습니다.",
+                    vibrancy: 30,
+                    buildings: [
+                        { name: "신포국제시장 활성화 시도", impact: "전통시장의 매력을 살리려 했으나, 역세권 전체의 쇠퇴를 막기에는 역부족이었습니다." },
+                        { name: "학생문화회관 이전", impact: "주요 공공시설의 이탈은 젊은 층의 유동인구를 감소시켜 상권 노후화를 가속화하는 요인이 되었습니다." },
+                        { name: "주변 재개발 계획 지연", impact: "여러 재개발 계획이 발표되었으나 실현되지 못하면서, 주거 환경 개선이 이루어지지 않아 인구 유출이 지속되었습니다." }
+                    ]
+                },
+                era4: {
+                    id: 'era4',
+                    name: "재생과 모색 (2010-현재)",
+                    title: "역사와 문화를 통한 새로운 가능성 탐색",
+                    description: "대규모 개발 대신, 기존의 자산을 활용하는 도시재생 사업으로 방향이 전환되었습니다. '배다리 헌책방거리'와 같은 고유한 문화 자원을 보존하고, 광장 재정비 사업 등을 통해 보행 환경을 개선하려는 노력이 이어지고 있습니다. 아직 완전한 활성화를 이루지는 못했지만, 역사와 문화의 가치를 재발견하며 새로운 부활을 모색하는 중요한 시기입니다.",
+                    vibrancy: 50,
+                    buildings: [
+                        { name: "동인천역 북광장 재정비", impact: "지역 주민과 방문객을 위한 휴식 공간과 이벤트 장소를 제공하여, 역 주변에 활기를 불어넣으려는 시도입니다." },
+                        { name: "스마트오피스 '큐브'", impact: "지역 내 청년 창업과 IT 기업 유치를 위한 거점 공간을 마련하여 새로운 업무 기능을 도입하려는 초기 단계의 실험입니다." },
+                        { name: "지역 문화공간 지원", impact: "지역 예술가와 커뮤니티를 위한 소규모 문화 공간을 지원하며, 상업 중심에서 문화 중심으로의 전환을 꾀하고 있습니다." }
+                    ]
+                }
+            };
+
+            const timelineNav = document.getElementById('timeline-nav');
+            const eraTitle = document.getElementById('era-title');
+            const eraDescription = document.getElementById('era-description');
+            const eraBuildings = document.getElementById('era-buildings');
+            const contentDisplay = document.getElementById('content-display');
+
+            const ctx = document.getElementById('vibrancyChart').getContext('2d');
+            let vibrancyChart;
+
+            function createChart() {
+                vibrancyChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: '상권 활력 지수',
+                            data: [],
+                            backgroundColor: 'rgba(38, 166, 154, 0.6)',
+                            borderColor: 'rgba(38, 166, 154, 1)',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                            barThickness: 50
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 120,
+                                ticks: {
+                                    font: { size: 14, family: "'Noto Sans KR', sans-serif" }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: { size: 14, family: "'Noto Sans KR', sans-serif" }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `활력 지수: ${context.raw}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function updateContent(eraId) {
+                const eraData = historyData[eraId];
+                if (!eraData) return;
+                
+                const contentContainer = document.getElementById('era-content');
+                contentContainer.classList.remove('fade-in');
+                void contentContainer.offsetWidth; 
+                contentContainer.classList.add('fade-in');
+
+                eraTitle.textContent = eraData.title;
+                eraDescription.textContent = eraData.description;
+
+                eraBuildings.innerHTML = '';
+                eraData.buildings.forEach(building => {
+                    const buildingCard = document.createElement('div');
+                    buildingCard.className = 'bg-stone-100 p-4 rounded-lg';
+                    buildingCard.innerHTML = `
+                        <h4 class="font-bold text-lg text-gray-800">${building.name}</h4>
+                        <p class="text-sm text-gray-600 mt-1">${building.impact}</p>
+                    `;
+                    eraBuildings.appendChild(buildingCard);
+                });
+
+                document.querySelectorAll('.timeline-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.era === eraId);
+                    btn.classList.toggle('text-teal-600', btn.dataset.era === eraId);
+                    btn.classList.toggle('font-bold', btn.dataset.era === eraId);
+                    btn.classList.toggle('text-gray-500', btn.dataset.era !== eraId);
+                });
+                
+                updateChart(eraId);
+            }
+
+            function updateChart(selectedEraId) {
+                const labels = Object.values(historyData).map(era => era.name);
+                const data = Object.values(historyData).map(era => era.vibrancy);
+                const backgroundColors = Object.values(historyData).map(era => 
+                    era.id === selectedEraId ? 'rgba(38, 166, 154, 1)' : 'rgba(38, 166, 154, 0.3)'
+                );
+
+                vibrancyChart.data.labels = labels;
+                vibrancyChart.data.datasets[0].data = data;
+                vibrancyChart.data.datasets[0].backgroundColor = backgroundColors;
+                vibrancyChart.update();
+            }
+
+            Object.entries(historyData).forEach(([key, value]) => {
+                const button = document.createElement('button');
+                button.textContent = value.name;
+                button.dataset.era = key;
+                button.className = 'timeline-btn text-sm md:text-base font-medium text-gray-500';
+                button.addEventListener('click', () => {
+                    updateContent(key);
+                    contentDisplay.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+                timelineNav.appendChild(button);
+            });
+
+            createChart();
+            updateContent('era1');
+        });
+    </script>
+</body>
+</html>
